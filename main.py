@@ -1,2 +1,2 @@
 print("Connect TOPDON TC001")
-print("Thermal1")
+print("Thermal2")
