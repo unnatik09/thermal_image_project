@@ -22,7 +22,7 @@ def on_mouse(event, x, y, flags, param):
 
 
 # Mac usually maps the TC001 to index 1 or 2 (0 is the FaceTime HD Camera)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(1, cv2.CAP_AVFOUNDATION)
 
 # EXPLICITLY set the TC001 data resolution for macOS
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 256)

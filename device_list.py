@@ -1,13 +1,10 @@
+import subprocess
+import numpy as np
 import cv2
 
-for i in range(5):
+# First, list available devices
+result = subprocess.run([
+    'ffmpeg', '-f', 'avfoundation', '-list_devices', 'true', '-i', ''
+], capture_output=True, text=True)
 
-    cap = cv2.VideoCapture(i, cv2.CAP_AVFOUNDATION)
-
-    if cap.isOpened():
-        ret, frame = cap.read()
-
-        if ret:
-            print(i, frame.shape)
-
-    cap.release()
+print(result.stderr)
