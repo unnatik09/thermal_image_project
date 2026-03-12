@@ -16,6 +16,8 @@ BUTTONS = [
     {'id': 'record', 'label': '[ REC ]',    'key': 'r'},
     {'id': 'stop',   'label': '[ STOP ]',   'key': 't'},
     {'id': 'detect', 'label': '[ DETECT ]', 'key': 'd'},
+    {'id': 'snap',   'label': '[ SNAP ]',   'key': 'p'},
+    {'id': 'export', 'label': '[ CSV ]',    'key': 'e'},
     {'id': 'quit',   'label': '[ QUIT ]',   'key': 'q'},
 ]
 
@@ -29,6 +31,10 @@ def _btn_color(btn_id: str, recorder, detect: bool):
         return (0, 120, 200) if recorder.recording else (60, 60, 60)
     if btn_id == 'detect':
         return (0, 180, 0) if detect else (60, 60, 60)
+    if btn_id == 'snap':
+        return (180, 100, 0)
+    if btn_id == 'export':
+        return (150, 80, 150)
     if btn_id == 'quit':
         return (30, 30, 30)
     return (60, 60, 60)
