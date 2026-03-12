@@ -106,19 +106,19 @@ def classify_all(fruits: List[FruitRegion],
 
 def draw_results(frame: np.ndarray,
                  results: List[ClassifiedFruit]) -> np.ndarray:
-    """
-    Draw bounding boxes, labels and MAD values on frame.
-      Green = Good
-      Red   = Bad
-    """
     vis = frame.copy()
 
     for r in results:
         color = (0, 255, 80) if r.label == "Good" else (0, 0, 255)
         x, y, w, h = r.region.bbox
 
-        cv2.drawContours(vis, [r.region.contour], -1, color, 2)
-        cv2.rectangle(vis, (x, y), (x + w, y + h), color, 1)
+        # Contour — black outline + colored fill
+        cv2.drawContours(vis, [r.region.contour], -1, (0, 0, 0), 4)  # black thick
+        cv2.drawContours(vis, [r.region.contour], -1, color,    2)  # color on top
+
+        # Bounding box — black outline + color
+        cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 0, 0), 3)   # black thick
+        cv2.rectangle(vis, (x, y), (x + w, y + h), color,    1)   # color on top
 
         lines = [
             r.label,
@@ -126,7 +126,10 @@ def draw_results(frame: np.ndarray,
             f"Tavg={r.t_avg:.1f}C",
         ]
         for i, line in enumerate(lines):
-            cv2.putText(vis, line, (x, y - 8 - i * 16),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+            # Black shadow first, then colored text on top
+            cv2.putText(vis, line, (x + 1, y - 7  - i * 16),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3, cv2.LINE_AA)
+            cv2.putText(vis, line, (x,     y - 8 - i * 16),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,    1, cv2.LINE_AA)
 
     return vis
