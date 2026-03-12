@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 current_temp = 0.0
+# Global mouse coords
 mx, my = 0, 0
 
 
