@@ -3,10 +3,10 @@ import numpy as np
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-WIDTH      = 256
-HEIGHT     = 384
-SPLIT      = HEIGHT // 2
-FRAMERATE  = 25
+WIDTH = 256
+HEIGHT = 384
+SPLIT = HEIGHT // 2
+FRAMERATE = 25
 
 
 class ThermalCamera:
@@ -16,7 +16,7 @@ class ThermalCamera:
     """
 
     def __init__(self, index: int = 0):
-        self.index      = index
+        self.index = index
         self.frame_size = WIDTH * HEIGHT * 2  # yuyv422 = 2 bytes per pixel
 
         self.process = subprocess.Popen([
@@ -45,7 +45,7 @@ class ThermalCamera:
             print("[ThermalCamera] Stream ended or frame size mismatch.")
             return None, None
 
-        frame  = np.frombuffer(raw, np.uint8).reshape((HEIGHT, WIDTH, 2))
+        frame = np.frombuffer(raw, np.uint8).reshape((HEIGHT, WIDTH, 2))
         imdata = frame[0:SPLIT, :]
         thdata = frame[SPLIT:HEIGHT, :]
 
