@@ -1,13 +1,20 @@
 import subprocess
 import numpy as np
 import cv2
+import time
 
 WIDTH, HEIGHT = 256, 384
-SPLIT = HEIGHT // 2  # 192
+SPLIT = HEIGHT // 2
 scale = 3
+DISPLAY_W = WIDTH * scale
+DISPLAY_H = SPLIT * scale
 
 current_temp = 0.0
 mx, my = 0, 0
+recording = False
+videoOut = None
+elapsed = "00:00:00"
+start = None
 
 def get_temp(thdata, row, col):
     hi = int(thdata[row, col, 0])
@@ -31,11 +38,10 @@ process = subprocess.Popen([
     '-framerate', '25',
     '-i', '0',
     '-f', 'rawvideo',
-    '-pix_fmt', 'yuyv422',   # NO color conversion — preserve raw bytes
+    '-pix_fmt', 'yuyv422',
     '-',
 ], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
-# yuyv422 = 2 bytes per pixel
 frame_size = WIDTH * HEIGHT * 2
 
 cv2.namedWindow('TC001 Thermal Scanner')
@@ -46,24 +52,21 @@ while True:
         print("Stream ended or error.")
         break
 
-    # Shape as YUYV — 2 channels effectively, keep as (H, W, 2)
     frame = np.frombuffer(raw, np.uint8).reshape((HEIGHT, WIDTH, 2))
 
-    imdata = frame[0:SPLIT, :]       # top — visual (YUV)
-    thdata = frame[SPLIT:HEIGHT, :]  # bottom — raw temp bytes
+    imdata = frame[0:SPLIT, :]
+    thdata = frame[SPLIT:HEIGHT, :]
 
     cv2.setMouseCallback('TC001 Thermal Scanner', on_mouse, param=thdata)
 
-    # Convert visual frame YUV -> BGR for display
-    # YUYV needs to be treated as full YUV422
     yuv = imdata.reshape((SPLIT, WIDTH, 2))
     bgr = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_YUYV)
-    bgr = cv2.resize(bgr, (WIDTH * scale, SPLIT * scale), interpolation=cv2.INTER_CUBIC)
+    bgr = cv2.resize(bgr, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_CUBIC)
     heatmap = cv2.applyColorMap(bgr, cv2.COLORMAP_JET)
 
-    # Center crosshair temp
+    # Center crosshair
     center_temp = get_temp(thdata, SPLIT // 2, WIDTH // 2)
-    cx, cy = (WIDTH * scale) // 2, (SPLIT * scale) // 2
+    cx, cy = DISPLAY_W // 2, DISPLAY_H // 2
     cv2.line(heatmap, (cx, cy + 20), (cx, cy - 20), (255, 255, 255), 2)
     cv2.line(heatmap, (cx + 20, cy), (cx - 20, cy), (255, 255, 255), 2)
     cv2.putText(heatmap, f"{center_temp} C", (cx + 10, cy - 10),
@@ -74,10 +77,40 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1, cv2.LINE_AA)
     cv2.circle(heatmap, (mx, my), 5, (255, 255, 255), 1)
 
+    # Recording indicator
+    if recording:
+        elapsed = time.strftime("%H:%M:%S", time.gmtime(time.time() - start))
+        cv2.putText(heatmap, f"REC {elapsed}", (10, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.circle(heatmap, (DISPLAY_W - 20, 20), 8, (0, 0, 255), -1)  # red dot
+        videoOut.write(heatmap)
+    else:
+        cv2.putText(heatmap, "r: Record | t: Stop | q: Quit", (10, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1, cv2.LINE_AA)
+
     cv2.imshow('TC001 Thermal Scanner', heatmap)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('r') and not recording:
+        now = time.strftime("%Y%m%d-%H%M%S")
+        filename = f"TC001_{now}.avi"
+        videoOut = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'XVID'), 25, (DISPLAY_W, DISPLAY_H))
+        recording = True
+        start = time.time()
+        print(f"Recording started: {filename}")
+
+    if key == ord('t') and recording:
+        recording = False
+        videoOut.release()
+        videoOut = None
+        elapsed = "00:00:00"
+        print("Recording stopped.")
+
+    if key == ord('q'):
         break
+
+if recording and videoOut:
+    videoOut.release()
 
 process.terminate()
 cv2.destroyAllWindows()
