@@ -36,7 +36,7 @@ def extract_temps_from_thdata(mask: np.ndarray, thdata: np.ndarray,
     th_mask = cv2.resize(mask,
                          (thdata.shape[1], thdata.shape[0]),
                          interpolation=cv2.INTER_NEAREST)
-    ys, xs  = np.where(th_mask > 0)
+    ys, xs = np.where(th_mask > 0)
     if len(ys) == 0:
         return np.array([])
 

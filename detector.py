@@ -69,7 +69,7 @@ def detect_fruits(heatmap: np.ndarray) -> List[FruitRegion]:
 
         fruits.append(FruitRegion(
             contour = cnt,
-            bbox    = (x, y, w, h),
+            bbox   = (x, y, w, h),
             center  = (x + w // 2, y + h // 2),
             area    = area,
             mask    = region_mask,

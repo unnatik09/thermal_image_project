@@ -1,8 +1,8 @@
 import cv2
 
-from camera      import ThermalCamera
+from camera import ThermalCamera
 from temperature import TempReader, SCALE
-from recorder    import Recorder, DISPLAY_W, DISPLAY_H
+from recorder import Recorder, DISPLAY_W, DISPLAY_H
 from detector    import detect_fruits
 from classifier  import classify_all, draw_results
 
