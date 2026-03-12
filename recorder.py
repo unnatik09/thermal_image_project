@@ -22,16 +22,16 @@ class Recorder:
 
     def __init__(self):
         self.recording = False
-        self.writer    = None
-        self.start     = None
-        self.elapsed   = "00:00:00"
-        self.filename  = None
+        self.writer = None
+        self.start = None
+        self.elapsed = "00:00:00"
+        self.filename = None
 
     def start_recording(self):
         """Begin recording to a timestamped AVI file."""
-        now            = time.strftime("%Y%m%d-%H%M%S")
-        self.filename  = f"TC001_{now}.avi"
-        self.writer    = cv2.VideoWriter(
+        now = time.strftime("%Y%m%d-%H%M%S")
+        self.filename = f"TC001_{now}.avi"
+        self.writer = cv2.VideoWriter(
             self.filename,
             cv2.VideoWriter_fourcc(*'XVID'),
             FRAMERATE,
