@@ -60,7 +60,7 @@ def on_mouse(event, x, y, flags, param):
 def main():
     global frame_num
 
-    camera   = ThermalCamera(index=1)
+    camera   = ThermalCamera(index=0)
     temp     = TempReader()
     recorder = Recorder()
     state    = {'detect': True, 'quit': False, 'snap': False, 'export': False}
