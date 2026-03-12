@@ -29,7 +29,7 @@ process = subprocess.Popen([
     '-f', 'avfoundation',
     '-video_size', f'{WIDTH}x{HEIGHT}',
     '-framerate', '25',
-    '-i', '0',
+    '-i', '1',
     '-f', 'rawvideo',
     '-pix_fmt', 'yuyv422',   # NO color conversion — preserve raw bytes
     '-',
