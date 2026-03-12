@@ -2,13 +2,13 @@ import cv2
 
 from camera import ThermalCamera
 from temperature import TempReader, SCALE
-from recorder    import Recorder, DISPLAY_W, DISPLAY_H
+from recorder import Recorder, DISPLAY_W, DISPLAY_H
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 CAMERA_INDEX = 0
-COLORMAP     = cv2.COLORMAP_JET
-WINDOW_NAME  = 'TC001 Thermal Scanner'
+COLORMAP = cv2.COLORMAP_JET
+WINDOW_NAME = 'TC001 Thermal Scanner'
 
 
 # ── Renderer ──────────────────────────────────────────────────────────────────
