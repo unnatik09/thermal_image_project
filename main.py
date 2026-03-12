@@ -1,97 +1,74 @@
 import cv2
 
-from camera import ThermalCamera
-from temperature import TempReader, SCALE
-from recorder import Recorder, DISPLAY_W, DISPLAY_H
-from detector    import detect_fruits
-from classifier  import classify_all, draw_results
-
-# ── Constants ─────────────────────────────────────────────────────────────────
+from camera      import ThermalCamera
+from temperature import TempReader
+from recorder    import Recorder
+from renderer    import render, get_clicked_button
 
 CAMERA_INDEX = 0
-COLORMAP     = cv2.COLORMAP_JET
 WINDOW_NAME  = 'TC001 Thermal Scanner'
 
 
-# ── Renderer ──────────────────────────────────────────────────────────────────
-
-def render(imdata, thdata, temp_reader, recorder, detect: bool = True):
-    bgr     = cv2.cvtColor(imdata, cv2.COLOR_YUV2BGR_YUYV)
-    bgr     = cv2.resize(bgr, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_CUBIC)
-    heatmap = cv2.applyColorMap(bgr, COLORMAP)
-
-    if detect:
-        fruits  = detect_fruits(heatmap)
-        results = classify_all(fruits, heatmap, thdata)
-        heatmap = draw_results(heatmap, results)
-
-    _draw_center_crosshair(heatmap, thdata, temp_reader)
-    _draw_mouse_temp(heatmap, temp_reader)
-    _draw_hud(heatmap, recorder, detect)
-
-    return heatmap
+def handle_button(btn_id: str, recorder: Recorder, detect: bool) -> bool:
+    """Handle button click or keypress. Returns updated detect state."""
+    if btn_id == 'record' and not recorder.recording:
+        recorder.start_recording()
+    elif btn_id == 'stop' and recorder.recording:
+        recorder.stop_recording()
+    elif btn_id == 'detect':
+        detect = not detect
+        print(f"[Main] Detection {'ON' if detect else 'OFF'}")
+    elif btn_id == 'quit':
+        return None   # signal quit
+    return detect
 
 
-def _draw_center_crosshair(heatmap, thdata, temp_reader):
-    from camera import SPLIT, WIDTH
-    temp   = temp_reader.decode(thdata, SPLIT // 2, WIDTH // 2)
-    cx, cy = DISPLAY_W // 2, DISPLAY_H // 2
-    cv2.line(heatmap, (cx, cy + 20), (cx, cy - 20), (255, 255, 255), 2)
-    cv2.line(heatmap, (cx + 20, cy), (cx - 20, cy), (255, 255, 255), 2)
-    cv2.putText(heatmap, f"{temp} C", (cx + 10, cy - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1, cv2.LINE_AA)
+def on_mouse(event, x, y, flags, param):
+    """Handle both mouse temp tracking and button clicks."""
+    temp_reader, recorder, state = param
+    temp_reader.on_mouse(event, x, y, flags, None)
 
+    if event == cv2.EVENT_LBUTTONDOWN:
+        btn = get_clicked_button(x, y)
+        if btn:
+            result = handle_button(btn, recorder, state['detect'])
+            if result is None:
+                state['quit'] = True
+            else:
+                state['detect'] = result
 
-def _draw_mouse_temp(heatmap, temp_reader):
-    mx, my = temp_reader.mx, temp_reader.my
-    cv2.putText(heatmap, f"{temp_reader.current_temp} C", (mx + 10, my - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1, cv2.LINE_AA)
-    cv2.circle(heatmap, (mx, my), 5, (255, 255, 255), 1)
-
-
-def _draw_hud(heatmap, recorder, detect):
-    if recorder.recording:
-        cv2.putText(heatmap, f"REC {recorder.elapsed}", (10, 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.circle(heatmap, (DISPLAY_W - 20, 20), 8, (0, 0, 255), -1)
-    else:
-        det_str = "ON" if detect else "OFF"
-        cv2.putText(heatmap, f"r:Rec  t:Stop  d:Detect[{det_str}]  q:Quit", (10, 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1, cv2.LINE_AA)
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     camera   = ThermalCamera(index=CAMERA_INDEX)
     temp     = TempReader()
     recorder = Recorder()
-    detect   = True
+    state    = {'detect': True, 'quit': False}
 
     cv2.namedWindow(WINDOW_NAME)
-    cv2.setMouseCallback(WINDOW_NAME, temp.on_mouse)
+    cv2.setMouseCallback(WINDOW_NAME, on_mouse, param=(temp, recorder, state))
 
     while True:
+        if state['quit']:
+            break
+
         imdata, thdata = camera.read()
         if imdata is None:
             print("[Main] Stream ended.")
             break
 
         temp.update_thdata(thdata)
-        heatmap = render(imdata, thdata, temp, recorder, detect=detect)
+        heatmap = render(imdata, thdata, temp, recorder, detect=state['detect'])
         recorder.write(heatmap)
         cv2.imshow(WINDOW_NAME, heatmap)
 
         key = cv2.waitKey(1) & 0xFF
-        if key == ord('r') and not recorder.recording:
-            recorder.start_recording()
-        if key == ord('t') and recorder.recording:
-            recorder.stop_recording()
-        if key == ord('d'):
-            detect = not detect
-            print(f"[Main] Detection {'ON' if detect else 'OFF'}")
-        if key == ord('q'):
-            break
+        key_map = {ord('r'): 'record', ord('t'): 'stop',
+                   ord('d'): 'detect', ord('q'): 'quit'}
+        if key in key_map:
+            result = handle_button(key_map[key], recorder, state['detect'])
+            if result is None:
+                break
+            state['detect'] = result
 
     camera.release()
     recorder.release()
