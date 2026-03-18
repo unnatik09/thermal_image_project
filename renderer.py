@@ -17,7 +17,6 @@ BUTTONS = [
     {'id': 'stop',   'label': '[ STOP ]',   'key': 't'},
     {'id': 'detect', 'label': '[ DETECT ]', 'key': 'd'},
     {'id': 'snap',   'label': '[ SNAP ]',   'key': 'p'},
-    {'id': 'export', 'label': '[ CSV ]',    'key': 'e'},
     {'id': 'quit',   'label': '[ QUIT ]',   'key': 'q'},
 ]
 
