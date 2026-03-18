@@ -6,8 +6,6 @@ from PyQt5.QtCore  import Qt, pyqtSignal
 from PyQt5.QtGui   import QFont
 
 
-# ── Styles ────────────────────────────────────────────────────────────────────
-
 BTN_BASE = """
     QPushButton {{
         background-color: {bg};
@@ -19,66 +17,34 @@ BTN_BASE = """
         font-weight: bold;
         letter-spacing: 1px;
     }}
-    QPushButton:hover {{
-        background-color: {hover};
-    }}
-    QPushButton:pressed {{
-        background-color: {border};
-    }}
-    QPushButton:disabled {{
-        background-color: #1a1a1a;
-        color: #444;
-        border-color: #333;
-    }}
+    QPushButton:hover {{ background-color: {hover}; }}
+    QPushButton:pressed {{ background-color: {border}; }}
+    QPushButton:disabled {{ background-color: #1a1a1a; color: #444; border-color: #333; }}
 """
 
 def _btn_style(bg, fg, border, hover):
     return BTN_BASE.format(bg=bg, fg=fg, border=border, hover=hover)
 
-STYLE_REC     = _btn_style('#8b0000', '#ff6666', '#cc0000', '#a00000')
-STYLE_STOP    = _btn_style('#1a1a1a', '#ff6666', '#cc0000', '#2a1010')
-STYLE_DETECT  = _btn_style('#003300', '#66ff88', '#00aa44', '#004400')
+STYLE_REC        = _btn_style('#8b0000', '#ff6666', '#cc0000', '#a00000')
+STYLE_STOP       = _btn_style('#1a1a1a', '#ff6666', '#cc0000', '#2a1010')
+STYLE_DETECT     = _btn_style('#003300', '#66ff88', '#00aa44', '#004400')
 STYLE_DETECT_OFF = _btn_style('#1a1a1a', '#446644', '#2a4a2a', '#222')
-STYLE_SNAP    = _btn_style('#1a1a2e', '#88aaff', '#3355aa', '#1e2a4a')
-STYLE_SETTINGS= _btn_style('#1a1a1a', '#aaaaaa', '#444444', '#2a2a2a')
-STYLE_QUIT    = _btn_style('#0a0a0a', '#666666', '#333333', '#1a1a1a')
+STYLE_SNAP       = _btn_style('#1a1a2e', '#88aaff', '#3355aa', '#1e2a4a')
+STYLE_ANALYZE    = _btn_style('#1e1a2e', '#bb88ff', '#6633aa', '#2a1e4a')
+STYLE_SETTINGS   = _btn_style('#1a1a1a', '#aaaaaa', '#444444', '#2a2a2a')
+STYLE_QUIT       = _btn_style('#0a0a0a', '#666666', '#333333', '#1a1a1a')
 
-STAT_LABEL = """
-    QLabel {
-        color: #00ff88;
-        font-size: 11px;
-        font-family: 'Courier New', monospace;
-        padding: 2px 0px;
-    }
-"""
-STAT_VALUE = """
-    QLabel {
-        color: #ffffff;
-        font-size: 12px;
-        font-family: 'Courier New', monospace;
-        font-weight: bold;
-        padding: 2px 0px;
-    }
-"""
-DIVIDER = """
-    QFrame {
-        color: #222222;
-    }
-"""
+STAT_LABEL = "QLabel { color: #00ff88; font-size: 11px; font-family: 'Courier New'; padding: 2px 0; }"
+STAT_VALUE = "QLabel { color: #ffffff; font-size: 12px; font-family: 'Courier New'; font-weight: bold; padding: 2px 0; }"
+DIVIDER    = "QFrame { color: #222222; }"
 
-
-# ── Control Panel ─────────────────────────────────────────────────────────────
 
 class ControlPanel(QWidget):
-    """
-    Right-side panel with buttons and live stats display.
-    Emits signals for each action — main window connects them.
-    """
-
     sig_record   = pyqtSignal()
     sig_stop     = pyqtSignal()
     sig_detect   = pyqtSignal()
     sig_snap     = pyqtSignal()
+    sig_analyze  = pyqtSignal()
     sig_settings = pyqtSignal()
     sig_quit     = pyqtSignal()
 
@@ -93,7 +59,6 @@ class ControlPanel(QWidget):
         layout.setContentsMargins(10, 12, 10, 12)
         layout.setSpacing(6)
 
-        # ── Title ─────────────────────────────────────────────────────────────
         title = QLabel("TC001")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("color: #00ff88; font-size: 18px; font-weight: bold; "
@@ -107,8 +72,6 @@ class ControlPanel(QWidget):
         layout.addWidget(sub)
 
         layout.addWidget(self._divider())
-
-        # ── Stats ─────────────────────────────────────────────────────────────
         layout.addWidget(self._section("TEMPERATURE"))
         self.lbl_center = self._stat_row(layout, "CENTER")
         self.lbl_cursor = self._stat_row(layout, "CURSOR")
@@ -128,19 +91,17 @@ class ControlPanel(QWidget):
         layout.addStretch()
         layout.addWidget(self._divider())
 
-        # ── Buttons ───────────────────────────────────────────────────────────
-        self.btn_rec  = self._btn("● REC",      STYLE_REC,     self.sig_record)
-        self.btn_stop = self._btn("■ STOP",     STYLE_STOP,    self.sig_stop)
-        self.btn_det  = self._btn("◈ DETECT",   STYLE_DETECT,  self.sig_detect)
-        self.btn_snap = self._btn("⊡ SNAPSHOT", STYLE_SNAP,    self.sig_snap)
-        self.btn_set  = self._btn("⚙ SETTINGS", STYLE_SETTINGS,self.sig_settings)
-        self.btn_quit = self._btn("✕ QUIT",     STYLE_QUIT,    self.sig_quit)
+        self.btn_rec     = self._btn("● REC",        STYLE_REC,      self.sig_record)
+        self.btn_stop    = self._btn("■ STOP",        STYLE_STOP,     self.sig_stop)
+        self.btn_det     = self._btn("◈ DETECT",      STYLE_DETECT,   self.sig_detect)
+        self.btn_snap    = self._btn("⊡ SNAPSHOT",    STYLE_SNAP,     self.sig_snap)
+        self.btn_analyze = self._btn("⊞ ANALYZE IMG", STYLE_ANALYZE,  self.sig_analyze)
+        self.btn_set     = self._btn("⚙ SETTINGS",    STYLE_SETTINGS, self.sig_settings)
+        self.btn_quit    = self._btn("✕ QUIT",        STYLE_QUIT,     self.sig_quit)
 
         for btn in [self.btn_rec, self.btn_stop, self.btn_det,
-                    self.btn_snap, self.btn_set, self.btn_quit]:
+                    self.btn_snap, self.btn_analyze, self.btn_set, self.btn_quit]:
             layout.addWidget(btn)
-
-    # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _divider(self):
         line = QFrame()
@@ -174,13 +135,11 @@ class ControlPanel(QWidget):
         btn.clicked.connect(signal.emit)
         return btn
 
-    # ── Public update methods ─────────────────────────────────────────────────
-
     def update_temps(self, center: float, cursor: float):
-        self.lbl_center.setText(f"{center:.1f} °C")
-        self.lbl_cursor.setText(f"{cursor:.1f} °C")
+        self.lbl_center.setText(f"{center:.1f} C")
+        self.lbl_cursor.setText(f"{cursor:.1f} C")
 
-    def update_detection(self, n_fruits: int, n_good: int, n_bad: int, entropy: float):
+    def update_detection(self, n_fruits, n_good, n_bad, entropy):
         self.lbl_fruits.setText(str(n_fruits))
         self.lbl_good.setText(str(n_good))
         self.lbl_bad.setText(f"<font color='#ff4444'>{n_bad}</font>" if n_bad > 0 else "0")

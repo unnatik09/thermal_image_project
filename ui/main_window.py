@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self.panel.sig_stop.connect(self._on_stop)
         self.panel.sig_detect.connect(self._on_detect)
         self.panel.sig_snap.connect(self._on_snap)
+        self.panel.sig_analyze.connect(self._on_analyze)
         self.panel.sig_settings.connect(self._on_settings)
         self.panel.sig_quit.connect(self.close)
 
@@ -144,6 +145,11 @@ class MainWindow(QMainWindow):
                           output_dir=self.state['settings'].snapshot_dir)
 
     @pyqtSlot()
+    def _on_analyze(self):
+        from ui.main_window import open_image_analyzer
+        open_image_analyzer(self)
+
+    @pyqtSlot()
     def _on_settings(self):
         dlg = SettingsDialog(self.state['settings'], parent=self)
         dlg.exec_()
@@ -165,3 +171,66 @@ class MainWindow(QMainWindow):
         self.recorder.release()
         self.camera.release()
         event.accept()
+
+
+# ── Image Analysis Dialog ─────────────────────────────────────────────────────
+
+def open_image_analyzer(parent):
+    """
+    Open file picker → run analysis → show result in a popup window.
+    Can be called from anywhere via: open_image_analyzer(self)
+    """
+    from PyQt5.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QLabel, QScrollArea
+    from PyQt5.QtGui     import QImage, QPixmap
+    from PyQt5.QtCore    import Qt
+    from utils_for_ui.image_analyzer import analyze_image
+
+    path, _ = QFileDialog.getOpenFileName(
+        parent, "Open Thermal Image", "",
+        "Images (*.png *.jpg *.jpeg *.bmp)"
+    )
+    if not path:
+        return
+
+    result = analyze_image(path)
+    if result is None:
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.warning(parent, "Error", f"Could not analyze:\n{path}")
+        return
+
+    # Show annotated frame in a dialog
+    dlg = QDialog(parent)
+    dlg.setWindowTitle(f"Analysis — {result.n_good} Good  {result.n_bad} Bad")
+    dlg.setStyleSheet("background-color: #0d0d0d;")
+    dlg.resize(820, 560)
+
+    layout = QVBoxLayout(dlg)
+    layout.setContentsMargins(10, 10, 10, 10)
+    layout.setSpacing(8)
+
+    # Stats bar
+    stats = QLabel(
+        f"  Fruits detected: {len(result.fruits)}    "
+        f"✓ Good: {result.n_good}    "
+        f"✗ Bad: {result.n_bad}  "
+    )
+    stats.setStyleSheet(
+        "color: #00ff88; background: #111; font-family: 'Courier New'; "
+        "font-size: 12px; padding: 6px; border: 1px solid #222;"
+    )
+    layout.addWidget(stats)
+
+    # Image
+    frame = result.annotated
+    rgb   = __import__('cv2').cvtColor(frame, __import__('cv2').COLOR_BGR2RGB)
+    h, w, c = rgb.shape
+    qimg  = QImage(rgb.data, w, h, w * c, QImage.Format_RGB888)
+    img_label = QLabel()
+    img_label.setPixmap(QPixmap.fromImage(qimg).scaled(
+        800, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation
+    ))
+    img_label.setAlignment(Qt.AlignCenter)
+    img_label.setStyleSheet("background: #000;")
+    layout.addWidget(img_label)
+
+    dlg.exec_()

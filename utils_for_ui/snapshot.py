@@ -4,31 +4,34 @@ import time
 import numpy as np
 
 
-def save_snapshot(frame: np.ndarray, output_dir: str = ".") -> str:
+def save_snapshot(frame: np.ndarray, output_dir: str = "snapshots") -> str:
     """
-    Save current frame as PNG with timestamp burned into the image.
-
-    Args:
-        frame      : BGR numpy array (the rendered heatmap)
-        output_dir : folder to save into
-
-    Returns:
-        full path of saved file
+    Save current frame as PNG with timestamp overlay.
+    Creates output_dir if it doesn't exist.
+    Returns full path of saved file.
     """
     os.makedirs(output_dir, exist_ok=True)
 
     now      = time.strftime("%Y%m%d-%H%M%S")
-    filename = f"TC001_snapshot_{now}.png"
-    path     = os.path.join(output_dir, filename)
-
+    path     = os.path.join(output_dir, f"TC001_{now}.png")
     snapshot = frame.copy()
 
-    # Timestamp overlay — black shadow + white text
-    label = f"TC001  {time.strftime('%Y-%m-%d  %H:%M:%S')}"
-    cv2.putText(snapshot, label, (11, snapshot.shape[0] - 9),
+    h, w     = snapshot.shape[:2]
+    label    = f"TC001  {time.strftime('%Y-%m-%d  %H:%M:%S')}"
+
+    # Black shadow + white text bottom-left
+    cv2.putText(snapshot, label, (11, h - 9),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3, cv2.LINE_AA)
-    cv2.putText(snapshot, label, (10, snapshot.shape[0] - 10),
+    cv2.putText(snapshot, label, (10, h - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+    # Small resolution tag top-right
+    res_tag = f"{w}x{h}"
+    (tw, _), _ = cv2.getTextSize(res_tag, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+    cv2.putText(snapshot, res_tag, (w - tw - 9, 19),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(snapshot, res_tag, (w - tw - 10, 18),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1, cv2.LINE_AA)
 
     cv2.imwrite(path, snapshot)
     print(f"[Snapshot] Saved → {path}")
