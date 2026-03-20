@@ -7,7 +7,7 @@ SETTINGS_FILE = "tc001_settings.json"
 
 @dataclass
 class Settings:
-    camera_index:    int   = 0
+    camera_index:    int   = 1
     mad_threshold:   float = 2.0
     min_fruit_area:  int   = 3000
     max_fruit_area:  int   = 200000
